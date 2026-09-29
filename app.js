@@ -1,7 +1,7 @@
 import { h, render } from 'https://esm.sh/preact@10.25.4'
 import { useState as us, useEffect as ue, useMemo as um } from 'https://esm.sh/preact@10.25.4/hooks'
 import htm from 'https://esm.sh/htm@3.1.1'
-import { localRequest } from './local-api.js'
+import { localRequest } from './local-api.js?v=6'
 
 const html = htm.bind(h)
 const headers = { 'Content-Type': 'application/json' }
@@ -97,7 +97,7 @@ function Auth({ onAuthed }) {
         <label>Email</label>
         <input type="email" value=${form.email} onInput=${(e) => setForm({ ...form, email: e.target.value })} required />
         <label>Password</label>
-        <input type="password" value=${form.password} onInput=${(e) => setForm({ ...form, password: e.target.value })} required minLength="8" />
+        <input type="password" value=${form.password} onInput=${(e) => setForm({ ...form, password: e.target.value })} required minLength=${mode === 'signup' ? '8' : '1'} />
         ${error && html`<div class="err">${error}</div>`}
         <button class="btn primary" type="submit">${mode === 'login' ? 'Enter the club' : 'Create member card'}</button>
       </form>

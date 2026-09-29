@@ -199,12 +199,44 @@ async function seed() {
   save(state)
 }
 
+async function ensureDemoUsers() {
+  const state = load()
+  let changed = false
+  const now = new Date().toISOString()
+  const needed = [
+    { name: 'Bradley Ingersoll', email: 'bradley@clubhouse.local', password: 'Clubhouse!2026', role: 'commissioner' },
+    { name: 'Test Member', email: 'test@clubhouse.com', password: 'test123', role: 'player' },
+  ]
+  for (const row of needed) {
+    const existing = state.users.find((u) => u.email === row.email)
+    if (!existing) {
+      state.users.push({
+        id: uid(),
+        name: row.name,
+        email: row.email,
+        password: await sha(row.password),
+        role: row.role,
+        active: true,
+        createdAt: now,
+      })
+      changed = true
+    } else {
+      existing.password = await sha(row.password)
+      existing.active = true
+      if (row.role === 'commissioner') existing.role = 'commissioner'
+      changed = true
+    }
+  }
+  if (changed) save(state)
+}
+
 function fail(message, status = 400) {
   throw Object.assign(new Error(message), { status })
 }
 
 export async function localRequest(path, options = {}) {
   await seed()
+  await ensureDemoUsers()
   const method = (options.method || 'GET').toUpperCase()
   const body = options.body ? JSON.parse(options.body) : {}
   const state = load()
