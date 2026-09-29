@@ -1,7 +1,7 @@
 import { h, render } from 'https://esm.sh/preact@10.25.4'
 import { useState as us, useEffect as ue, useMemo as um } from 'https://esm.sh/preact@10.25.4/hooks'
 import htm from 'https://esm.sh/htm@3.1.1'
-import { localRequest } from './local-api.js?v=6'
+import { localRequest } from './local-api.js?v=7'
 
 const html = htm.bind(h)
 const headers = { 'Content-Type': 'application/json' }
@@ -67,6 +67,10 @@ function Auth({ onAuthed }) {
   async function submit(e) {
     e.preventDefault()
     setError('')
+    if (mode === 'signup' && String(form.password || '').length < 8) {
+      setError('New member passwords need at least 8 characters.')
+      return
+    }
     try {
       const fn = mode === 'login' ? api.login : api.signup
       await fn(form)
@@ -97,7 +101,7 @@ function Auth({ onAuthed }) {
         <label>Email</label>
         <input type="email" value=${form.email} onInput=${(e) => setForm({ ...form, email: e.target.value })} required />
         <label>Password</label>
-        <input type="password" value=${form.password} onInput=${(e) => setForm({ ...form, password: e.target.value })} required minLength=${mode === 'signup' ? '8' : '1'} />
+        <input type="password" value=${form.password} onInput=${(e) => setForm({ ...form, password: e.target.value })} required />
         ${error && html`<div class="err">${error}</div>`}
         <button class="btn primary" type="submit">${mode === 'login' ? 'Enter the club' : 'Create member card'}</button>
       </form>
