@@ -247,13 +247,16 @@ function CardPage({ week, user, onChange, onOpenBoard }) {
       </div>
     </section>
     <div class="grid">
-      <div class="paper">
+      <div class="paper ticket">
         <div class="row">
-          <h3 style="margin:0">Picks</h3>
+          <h3 style="margin:0">Your picks</h3>
           <span class="tag">${event.cardsLocked ? 'Locked' : 'Open'}</span>
         </div>
         ${bets.length === 0 && html`
-          <p class="muted">Nothing on the card yet. Head to the Board to start filling the $${event.budget} budget.</p>
+          <div class="ticket-empty">
+            <p class="muted">This card is empty. The Board is where you add golfers. Come back here to review the ticket.</p>
+            <button class="btn primary" type="button" onClick=${onOpenBoard}>Go to the Board</button>
+          </div>
         `}
         ${bets.map((b) => html`
           <div class="list-item" key=${b.id}>
@@ -483,6 +486,10 @@ function App() {
   }
 
   ue(() => { boot().catch(() => setUser(null)) }, [])
+  ue(() => {
+    const titles = { week: 'This Week', board: 'The Board', card: 'My Card', club: 'Club Cards', season: 'Season', ledger: 'Ledger', admin: 'Admin' }
+    document.title = `${titles[page] || 'Clubhouse'} · Clubhouse`
+  }, [page])
 
   const pages = um(() => {
     const list = [...PAGES]
