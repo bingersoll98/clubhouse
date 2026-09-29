@@ -91,6 +91,15 @@ a { color: inherit; }
 .tabs button { padding: 6px 10px; border-radius: 8px; border: 1px solid var(--line); background: transparent; color: var(--paper); cursor: pointer; }
 .tabs button.active { background: var(--paper); color: var(--ink); }
 .search { width: 100%; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--line); background: #10261c; color: var(--paper); margin: 8px 0 12px; }
+.card input.search {
+  background: #10261c;
+  color: var(--gold-2);
+  border: 1px solid var(--line);
+  caret-color: var(--gold-2);
+}
+.card input.search::placeholder {
+  color: rgba(232, 215, 168, 0.55);
+}
 .pick {
   display: grid; grid-template-columns: 1fr auto auto; gap: 8px; align-items: center;
   padding: 8px 0; border-bottom: 1px solid var(--line);
