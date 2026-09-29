@@ -41,6 +41,13 @@ a { color: inherit; }
   border: 1px solid var(--line); background: transparent; color: var(--paper);
   padding: 8px 12px; border-radius: 999px; cursor: pointer;
 }
+.paper .ghost, .paper .btn {
+  color: var(--ink);
+  border-color: rgba(18, 32, 23, 0.22);
+}
+.paper .btn.primary {
+  background: var(--gold); color: var(--ink); border-color: var(--gold);
+}
 .nav button.active, .btn.primary {
   background: var(--gold); color: var(--ink); border-color: var(--gold); font-weight: 600;
 }
