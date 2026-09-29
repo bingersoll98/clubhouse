@@ -148,7 +148,7 @@ function WeekPage({ week, user }) {
   `
 }
 
-function BoardPage({ week, user, onChange }) {
+function BoardPage({ week, user, onChange, onOpenCard }) {
   const event = week?.event
   const [marketId, setMarketId] = us(event?.markets?.[0]?.id)
   const [q, setQ] = us('')
@@ -207,29 +207,77 @@ function BoardPage({ week, user, onChange }) {
         ${rows.length === 0 && html`<p class="muted">No priced golfers in this market yet.</p>`}
       </div>
       <div class="slip paper">
-        <h3>Slip</h3>
+        <h3>This week</h3>
         <label>Default stake</label>
         <input type="number" min="1" step="1" value=${stake} onInput=${(e) => setStake(e.target.value)} />
         <div class="row"><span>Used</span><b>${formatMoney(mine?.staked || 0).replace('+','')} / $${event.budget}</b></div>
         <div class="row"><span>Left</span><b>${formatMoney(mine?.remaining ?? event.budget).replace('+','')}</b></div>
-        ${(mine?.bets || []).map((b) => html`
-          <div class="list-item" key=${b.id}>
-            <div class="row">
-              <b>${b.golfer}</b>
-              <button class="ghost" disabled=${event.cardsLocked} onClick=${async () => { await api.removeBet(b.id); onChange() }}>Remove</button>
-            </div>
-            <div class="muted">${b.label || event.markets.find((m) => m.id === b.marketId)?.name} · ${formatOdds(b.odds)} · $${Number(b.stake).toFixed(2)}</div>
-            <div class="muted">To win ${formatMoney(payout(b.stake, b.odds)).replace('+','')}</div>
-          </div>
-        `)}
+        <p class="muted">${mine?.complete ? 'Card is complete.' : 'Use the full budget, then review it on My Card.'}</p>
+        <button class="btn primary" type="button" onClick=${onOpenCard}>Open my card</button>
         <form onSubmit=${requestCustom}>
           <h3>Custom bet</h3>
           <input placeholder="What is the bet?" value=${custom.description} onInput=${(e) => setCustom({ ...custom, description: e.target.value })} />
           <input placeholder="Golfer or side" value=${custom.golfer} onInput=${(e) => setCustom({ ...custom, golfer: e.target.value })} />
-          <input placeholder="DK American odds, e.g. +650" value=${custom.odds} onInput=${(e) => setCustom({ ...custom, odds: e.target.value })} />
+          <input placeholder="American odds, e.g. +650" value=${custom.odds} onInput=${(e) => setCustom({ ...custom, odds: e.target.value })} />
           <input type="number" min="1" value=${custom.stake} onInput=${(e) => setCustom({ ...custom, stake: e.target.value })} />
           <button class="btn primary" disabled=${event.cardsLocked}>Request approval</button>
         </form>
+      </div>
+    </div>
+  `
+}
+
+function CardPage({ week, user, onChange, onOpenBoard }) {
+  const event = week?.event
+  if (!event) return html`<div class="card">No week is open yet.</div>`
+  const mine = event.cards.find((c) => c.userId === user.id)
+  const bets = mine?.bets || []
+  const used = mine?.staked || 0
+  const left = mine?.remaining ?? event.budget
+  const toWin = bets.reduce((s, b) => s + payout(b.stake, b.odds), 0)
+
+  return html`
+    <section class="hero">
+      <div class="kicker">Your ticket</div>
+      <h1>My Card</h1>
+      <div class="meta">
+        <span>${event.name}</span>
+        <span>${formatMoney(used).replace('+','')} of $${event.budget}</span>
+        <span>${mine?.complete ? 'Complete' : `$${(left).toFixed(2)} still to place`}</span>
+      </div>
+    </section>
+    <div class="grid">
+      <div class="paper">
+        <div class="row">
+          <h3 style="margin:0">Picks</h3>
+          <span class="tag">${event.cardsLocked ? 'Locked' : 'Open'}</span>
+        </div>
+        ${bets.length === 0 && html`
+          <p class="muted">Nothing on the card yet. Head to the Board to start filling the $${event.budget} budget.</p>
+        `}
+        ${bets.map((b) => html`
+          <div class="list-item" key=${b.id}>
+            <div class="row">
+              <b>${b.golfer}</b>
+              <span class=${b.result === 'win' ? 'win' : b.result === 'lose' ? 'lose' : ''}>${b.result === 'pending' ? formatOdds(b.odds) : b.result}</span>
+            </div>
+            <div class="muted">${b.label || event.markets.find((m) => m.id === b.marketId)?.name} · $${Number(b.stake).toFixed(2)}</div>
+            <div class="row">
+              <span class="muted">To win ${formatMoney(payout(b.stake, b.odds)).replace('+','')}</span>
+              <button class="ghost" disabled=${event.cardsLocked} onClick=${async () => { await api.removeBet(b.id); onChange() }}>Remove</button>
+            </div>
+          </div>
+        `)}
+      </div>
+      <div class="card">
+        <h3>Budget</h3>
+        <div class="row"><span>Used</span><b>${formatMoney(used).replace('+','')}</b></div>
+        <div class="row"><span>Remaining</span><b>${formatMoney(left).replace('+','')}</b></div>
+        <div class="row"><span>To win if all hit</span><b>${formatMoney(toWin).replace('+','')}</b></div>
+        <p class="muted">${mine?.complete ? 'This card uses the full week budget.' : 'A card does not count until it totals exactly $' + event.budget + '.'}</p>
+        <button class="btn primary" type="button" onClick=${onOpenBoard}>
+          ${mine?.complete ? 'Back to the Board' : 'Fill out the rest on the Board'}
+        </button>
       </div>
     </div>
   `
@@ -461,7 +509,8 @@ function App() {
         <div class="userchip">${user.name}</div>
       </header>
       ${page === 'week' && html`<${WeekPage} week=${week} user=${user} />`}
-      ${(page === 'board' || page === 'card') && html`<${BoardPage} week=${week} user=${user} onChange=${boot} />`}
+      ${page === 'board' && html`<${BoardPage} week=${week} user=${user} onChange=${boot} onOpenCard=${() => setPage('card')} />`}
+      ${page === 'card' && html`<${CardPage} week=${week} user=${user} onChange=${boot} onOpenBoard=${() => setPage('board')} />`}
       ${page === 'club' && html`<${ClubCards} week=${week} user=${user} />`}
       ${page === 'season' && html`<${SeasonPage} season=${season} />`}
       ${page === 'ledger' && html`<${LedgerPage} ledger=${ledger} season=${season} />`}
